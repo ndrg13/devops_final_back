@@ -31,6 +31,10 @@ jobs:
           command: |
             sudo pip install pipenv
             pipenv install
+          name: Install virtual env
+      - run:
+          command: sudo apt install libpq-dev python3-dev
+          name: Install build tools
       - run:
           command: pip install -r requirements/dev.txt --user
           name: Install requirements
