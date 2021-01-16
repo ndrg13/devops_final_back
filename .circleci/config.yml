@@ -42,6 +42,7 @@ jobs:
             - "/usr/local/lib/python3.6/site-packages"
 
 workflows:
+  version: 2
   main:
     jobs:
       - build
