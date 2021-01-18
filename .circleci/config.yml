@@ -97,14 +97,15 @@ jobs:
 
 workflows:
   version: 2
-  jobs:
-    - build
-    - test:
-        requires:
-          - build
-    - deploy:
-        requires:
-          - build
-    - docker-build-push:
-        requires:
-          - build
+  main:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - deploy:
+          requires:
+            - build
+      - docker-build-push:
+          requires:
+            - build
