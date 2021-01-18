@@ -7,6 +7,7 @@ jobs:
         auth:
           username: $DOCKER_ID
           password: $DOCKER_PASSWORD
+    working_directory: ~/repo
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
