@@ -106,9 +106,9 @@ workflows:
   main:
     jobs:
       - build
-      - test:
-          requires:
-            - build
+        # - test:
+        # requires:
+        #   - build
       - deploy-heroku:
           requires:
             - build
