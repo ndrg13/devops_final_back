@@ -105,6 +105,6 @@ workflows:
     - deploy:
         requires:
           - build
-    - docker-build-push
+    - docker-build-push:
         requires:
           - build
