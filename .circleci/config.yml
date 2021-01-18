@@ -44,19 +44,19 @@ jobs:
           POSTGRES_USER: myUsr
           POSTGRES_DB: psdb
           POSTGRES_PASSWORD: somePwd
-      steps:
-        - checkout
-        - restore_cache:
-            key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
-        - run: 
-            name: Waiting for postgresql
-            command : dockerize -wait tcp://localhost:5432 -timeout 1m
-        - run: 
-            name: Launching tests
-            command: |
-              . venv/bin/activate
-              flask db upgrade
-              flask test
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+      - run: 
+          name: Waiting for postgresql
+          command : dockerize -wait tcp://localhost:5432 -timeout 1m
+      - run: 
+          name: Launching tests
+          command: |
+            . venv/bin/activate
+            flask db upgrade
+            flask test
   deploy-heroku:
     docker: 
       - image : buildpack-deps:trusty
