@@ -30,10 +30,6 @@ jobs:
           name: Install requirements
       - run: 
           command: pip install sqlalchemy --upgrade && pip install Flask-SQLAlchemy --upgrade
-      - run:
-          command: flask db upgrade
-      - run:
-          command: flask test
       - save_cache:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
           paths:
