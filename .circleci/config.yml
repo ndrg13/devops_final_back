@@ -76,7 +76,6 @@ jobs:
               exit 1
             fi
   docker-build-push:
-    working_directory: /dockerapp
     docker:
       - image: docker:17.05.0-ce-git
     steps:
