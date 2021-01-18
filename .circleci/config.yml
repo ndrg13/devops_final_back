@@ -7,20 +7,6 @@ jobs:
         auth:
           username: $DOCKER_ID
           password: $DOCKER_PASSWORD
-        environment:
-          PIPENV_VENV_IN_PROJECT: true
-          DATABASE_URL: postgresql://root@localhost/circle_test?sslmode=disable
-          CONDUIT_SECRET: $CONDUIT_SECRET
-          FLASK_APP: ~/autoapp.py
-          FLASK_DEBUG: 1
-      - image: circleci/postgres:9.6.2
-        auth:
-          username: $DOCKER_ID
-          password: $DOCKER_PASSWORD
-        environment:
-          POSTGRES_USER: root
-          POSTGRES_DB: circle_test
-
     steps:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
@@ -29,7 +15,7 @@ jobs:
           key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
       - run:
           command: sudo apt install libpq-dev python3-dev
-          name: Install build tools      
+          name: Install build tools
       - run:
           command: |
             sudo pip install pipenv
@@ -44,9 +30,84 @@ jobs:
             - ".venv"
             - "/usr/local/bin"
             - "/usr/local/lib/python3.6/site-packages"
+  test:
+    docker:
+      - image: circleci/python:3.9
+          auth:
+            username: $DOCKER_ID
+            password: $DOCKER_PASSWORD
+          environment:
+            PIPENV_VENV_IN_PROJECT: true
+            DATABASE_URL: postgresql://myUsr:somePwd@localhost/psdb
+            CONDUIT_SECRET: $CONDUIT_SECRET
+            FLASK_APP: ~/autoapp.py
+            FLASK_DEBUG: 1
+      - image: circleci/postgres:9.6.2
+          auth:
+            username: $DOCKER_ID
+            password: $DOCKER_PASSWORD
+          environment:
+            POSTGRES_USER: myUsr
+            POSTGRES_DB: psdb
+            POSTGRES_PASSWORD: somePwd
+      steps:
+        - checkout
+        - restore_cache:
+            key: deps9-{{ .Branch }}-{{ checksum "Pipfile.lock" }}
+        - run: 
+            name: Waiting for postgresql
+            command : dockerize -wait tcp://localhost:5432 -timeout 1m
+        - run: 
+            name: Launching tests
+            command: |
+              . venv/bin/activate
+              flask db upgrade
+              flask test
+  deploy-heroku:
+    docker: 
+      - image : buildpack-deps:trusty
+    steps:
+      - checkout
+      - run:
+          name: Deploy main to heroku
+          command: |
+            git config --global push.default matching
+            git push https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_APP_NAME.git main
+      - run:
+          name: Smoke test
+          command: |
+            HTTPCODE=`curl -s -o /dev/null -w "%{http_code}" https://$HEROKU_APP_NAME.herokuapp.com/api/articles`
+            if [ "$HTTPCODE" -ne 200 ];then
+              echo "heroku app not responding, failing deploy"
+              exit 1
+            fi
+  docker-build-push:
+    working_directory: /dockerapp
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build container
+          command: |
+            docker build --cache-from=app -t app .
+      - run: 
+          name: Publish app to Docker hub
+          command: |
+            docker login -u $DOCKER_ID -p $DOCKER_PASSWORD
+            docker tag app $DOCKER_ID/devops-final-back:$CIRCLE_BUILD_NUM
+            docker tag app $DOCKER_ID/devops-final-back:latest
+            docker push $DOCKER_ID/devops-final-back:$CIRCLE_BUILD_NUM
+            docker push $DOCKER_ID/devops-final-back:latest
 
 workflows:
   version: 2
-  main:
-    jobs:
-      - build
+  jobs:
+    - build
+    - test:
+        requires:
+          - build
+    - deploy
+        requires:
+          - build
