@@ -103,7 +103,7 @@ workflows:
       - test:
           requires:
             - build
-      - deploy:
+      - deploy-heroku:
           requires:
             - build
       - docker-build-push:
